@@ -126,17 +126,29 @@ public class ArangoDatabaseHandler implements RecommendationDatabaseHandler {
                 "LET authorProfilePictureUrl = u.profilePictureUrl " +
                 "LET headline = u.headline ";
 
+        String getLikersQuery = "LET likers = ( " +
+                "FOR liker in users " +
+                "FILTER liker._key IN article.likers " +
+                "RETURN " +
+                "{ " +
+                "\"likerId\": liker._key, " +
+                "\"likerName\": CONCAT(liker.firstName, \" \", liker.lastName), " +
+                "\"likerProfilePictureUrl\": liker.profilePictureUrl " +
+                "} " +
+                ") ";
+
         String returnQuery = "RETURN MERGE_RECURSIVE(UNSET(article, \"text\", \"liked\", \"isArticle\", \"likers\", \"peopleTalking\"), " +
                 "{\"authorName\": authorName," +
                 "\"headline\":headline," +
                 "\"authorProfilePictureUrl\": authorProfilePictureUrl," +
                 "\"miniText\": LEFT(article.text, 200)," +
                 "\"liked\": u.userId IN article.likers," +
+                "\"likers\": likers," +
                 "\"peopleTalking\": total" +
                 "})";
 
         String query = queryHeader + getAuthorQuery + sortArticlesByTimeQuery + sortArticlesByPopularityQuery
-                + userDetailsQuery + returnQuery;
+                + userDetailsQuery + getLikersQuery + returnQuery;
 
         //bind variables
         Map<String, Object> bindVars = new MapBuilder()
